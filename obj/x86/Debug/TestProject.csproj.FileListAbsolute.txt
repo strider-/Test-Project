@@ -1,0 +1,11 @@
+C:\Users\strider-\AppData\Local\Temporary Projects\TestProject\obj\x86\Debug\ResolveAssemblyReference.cache
+C:\Users\strider-\AppData\Local\Temporary Projects\TestProject\bin\Debug\TestProject.exe
+C:\Users\strider-\AppData\Local\Temporary Projects\TestProject\bin\Debug\TestProject.pdb
+C:\Users\strider-\AppData\Local\Temporary Projects\TestProject\obj\x86\Debug\TestProject.exe
+C:\Users\strider-\AppData\Local\Temporary Projects\TestProject\obj\x86\Debug\TestProject.pdb
+G:\Visual Studio Projects\2010\TestProject\TestProject\obj\x86\Debug\TestProject.exe
+G:\Visual Studio Projects\2010\TestProject\TestProject\obj\x86\Debug\TestProject.pdb
+G:\Visual Studio Projects\2010\TestProject\TestProject\bin\Debug\TestProject.exe
+G:\Visual Studio Projects\2010\TestProject\TestProject\bin\Debug\TestProject.pdb
+G:\Visual Studio Projects\2010\TestProject\TestProject\obj\x86\Debug\ResolveAssemblyReference.cache
+G:\Visual Studio Projects\2010\TestProject\TestProject\bin\Debug\TestProject.exe.config
