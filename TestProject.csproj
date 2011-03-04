@@ -61,6 +61,7 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="change_alert.htm" />
+    <None Include="README" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config">
