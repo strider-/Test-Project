@@ -13,8 +13,6 @@ namespace TestProject {
     class Program {        
         [STAThread]
         static void Main(string[] args) {
-            Console.SetWindowSize(60, 30);
-            Console.CursorVisible = false;
             //RSACryptoServiceProvider p = new RSACryptoServiceProvider(2048);
             //string pem = RSAKeyReader.ToPEM(p.ExportParameters(false));
             //System.IO.File.WriteAllText(@"h:\downloads\rsa.pem", pem);

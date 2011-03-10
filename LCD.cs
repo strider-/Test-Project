@@ -150,20 +150,35 @@ namespace TestProject {
             write(new byte[] { 18, 0, (byte)type, StartColumn, EndColumn, length, Row });
         }
 
-        void Test() {
-            //this.MoveHome();
-            //this.HideCursor();
-            List<byte> m = new List<byte>();
+        public void Marquee(string Text, byte Row, byte Speed) {
+            if(Speed <= 0)
+                Speed = 1;
+            if(Speed > 6)
+                Speed = 6;
 
-            m.AddRange(new byte[] { 4, 22, 255, 0, 5, 12, 17, 0, 0 });
-            m.AddRange("Scrolling Marquee".Select(c => (byte)c).ToArray());
+            StopMarquee();
 
-            string st = "Crystalfontz";
-            for(int i = 0; i < st.Length * 3; i += 3) {
-                m.AddRange(new byte[] { 21, (byte)(i / 3), (byte)st[i / 3] });
+            if(Text.Length <= 20) {
+                WriteText(Text, 0, 0);
+            } else {
+                string visible = Text.Substring(0, 20);
+                string hidden;
+                if(Text.Length > 40)
+                    hidden = Text.Substring(20, 17) + "...";
+                else
+                    hidden = string.Format("{0,-20}",Text.Substring(20));
+
+                WriteText(visible, 0, Row);
+                for(int i = 0; i < hidden.Length; i++) {
+                    write(new byte[] { 21, (byte)i, (byte)hidden[i] });
+                }
             }
-            m.AddRange(new byte[] { 22, 0, 5, 16 });
-            write(m.ToArray());
+
+            write(new byte[] { 22, Row, Speed, 16 });
+        }
+
+        public void StopMarquee() {
+            write(new byte[] { 22, 255, 1, 16 });
         }
 
         public LCDCursorType CursorType {

@@ -9,3 +9,9 @@ G:\Visual Studio Projects\2010\TestProject\TestProject\bin\Debug\TestProject.exe
 G:\Visual Studio Projects\2010\TestProject\TestProject\bin\Debug\TestProject.pdb
 G:\Visual Studio Projects\2010\TestProject\TestProject\obj\x86\Debug\ResolveAssemblyReference.cache
 G:\Visual Studio Projects\2010\TestProject\TestProject\bin\Debug\TestProject.exe.config
+G:\Visual Studio Projects\2010\TestProject\TestProject\bin\Debug\IrcDotNet.dll
+G:\Visual Studio Projects\2010\TestProject\TestProject\bin\Debug\IrcDotNet.Common.dll
+G:\Visual Studio Projects\2010\TestProject\TestProject\bin\Debug\IrcDotNet.pdb
+G:\Visual Studio Projects\2010\TestProject\TestProject\bin\Debug\IrcDotNet.xml
+G:\Visual Studio Projects\2010\TestProject\TestProject\bin\Debug\IrcDotNet.Common.pdb
+G:\Visual Studio Projects\2010\TestProject\TestProject\bin\Debug\IrcDotNet.Common.xml
