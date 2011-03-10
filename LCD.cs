@@ -7,6 +7,7 @@ using System.IO.Ports;
 namespace TestProject {
     class LCD : IDisposable {
         SerialPort com;
+        string mtext;
 
         public enum LCDCursorType {
             Underline = 5,
@@ -29,6 +30,10 @@ namespace TestProject {
             com = new SerialPort(PortName, 19200, Parity.None, 8, StopBits.One);
             CursorType = LCDCursorType.InvertingBlock;
             com.Open();
+        }
+
+        public static bool IsPortAvailable(string PortName) {
+            return SerialPort.GetPortNames().Any(p => p.Equals(PortName, StringComparison.InvariantCultureIgnoreCase));
         }
 
         public void Dispose() {
@@ -113,12 +118,9 @@ namespace TestProject {
         public void DisplayInfoScreen() {
             write(31);
         }
-        public void WriteText(string Text, byte Column, byte Row) {
+        public void WriteText(byte Column, byte Row, string Text, params object[] args) {
             SetCursorPosition(Column, Row);
-            com.Write(Text);
-        }
-        public void WriteText(string Text) {
-            com.Write(Text);
+            write(Encoding.Unicode.GetBytes(string.Format(Text, args)));
         }
         public void Reboot() {
             write(new byte[] { 26, 26 });
@@ -151,6 +153,9 @@ namespace TestProject {
         }
 
         public void Marquee(string Text, byte Row, byte Speed) {
+            if(Text == mtext)
+                return;
+
             if(Speed <= 0)
                 Speed = 1;
             if(Speed > 6)
@@ -159,26 +164,34 @@ namespace TestProject {
             StopMarquee();
 
             if(Text.Length <= 20) {
-                WriteText(Text, 0, 0);
+                WriteText(0, Row, Text);
+                setHiddenMarquee(Text);
             } else {
                 string visible = Text.Substring(0, 20);
                 string hidden;
                 if(Text.Length > 40)
                     hidden = Text.Substring(20, 17) + "...";
                 else
-                    hidden = string.Format("{0,-20}",Text.Substring(20));
+                    hidden = string.Format("{0,-20}", Text.Substring(20));
 
-                WriteText(visible, 0, Row);
-                for(int i = 0; i < hidden.Length; i++) {
-                    write(new byte[] { 21, (byte)i, (byte)hidden[i] });
-                }
+                WriteText(0, Row, visible);
+                setHiddenMarquee(hidden);
             }
 
             write(new byte[] { 22, Row, Speed, 16 });
+            mtext = Text;
         }
 
         public void StopMarquee() {
             write(new byte[] { 22, 255, 1, 16 });
+        }
+
+        void setHiddenMarquee(string text) {
+            if(text.Length < 20)
+                text = string.Format("{0,-20}", text);
+            for(int i = 0; i < 20; i++) {
+                write(new byte[] { 21, (byte)i, (byte)text[i] });
+            }
         }
 
         public LCDCursorType CursorType {
