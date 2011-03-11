@@ -1,6 +1,0 @@
-G:\Visual Studio Projects\2010\TestProject\TestProject\bin\Release\TestProject.exe.config
-G:\Visual Studio Projects\2010\TestProject\TestProject\bin\Release\TestProject.exe
-G:\Visual Studio Projects\2010\TestProject\TestProject\bin\Release\TestProject.pdb
-G:\Visual Studio Projects\2010\TestProject\TestProject\obj\x86\Release\ResolveAssemblyReference.cache
-G:\Visual Studio Projects\2010\TestProject\TestProject\obj\x86\Release\TestProject.exe
-G:\Visual Studio Projects\2010\TestProject\TestProject\obj\x86\Release\TestProject.pdb
