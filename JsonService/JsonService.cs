@@ -22,16 +22,24 @@ namespace TestProject.JsonService {
             this.LogOutput = Console.Out;
             this.listener = new HttpListener();
         }
-        
+
         /// <summary>
-        /// Starts the service
+        /// Starts the service, without opening the default browser.
         /// </summary>
         public void Start() {
+            Start(false);
+        }
+        /// <summary>
+        /// Starts the service, with the option to open the default browser.
+        /// </summary>
+        public void Start(bool OpenBrowser) {
             if(!listener.IsListening) {
                 InitService();
                 Log("Server started @ " + Url);
                 listener.Start();
                 listener.BeginGetContext(NewRequest, null);
+                if(OpenBrowser)
+                    System.Diagnostics.Process.Start(Url);
             }
         }
         /// <summary>
@@ -111,9 +119,12 @@ namespace TestProject.JsonService {
 
                         Log("Valid request, response returned");
                         Respond(Context.Response, o);
-                    } catch {
+                    } catch(ArgumentException ae) {
+                        Log("Parameter value invalid");
+                        Respond(Context.Response, ParameterFailure(ae.InnerException.Message, ae.ParamName));
+                    } catch(Exception e) {
                         Log("Failure to execute method");
-                        Respond(Context.Response, CallFailure());
+                        Respond(Context.Response, CallFailure(e.Message));
                     }
                 }
             }
@@ -141,8 +152,10 @@ namespace TestProject.JsonService {
         /// </summary>
         /// <returns></returns>
         object Describe() {
+            Uri absUri = null;
             return (from m in methods
                     let ps = m.MethodInfo.GetParameters()
+                    let b = !string.IsNullOrWhiteSpace(m.Attribute.Example) && Uri.TryCreate(new Uri(Url), m.Attribute.Example, out absUri)
                     select new {
                         path = m.Attribute.Path,
                         desc = m.Attribute.Description,
@@ -156,7 +169,7 @@ namespace TestProject.JsonService {
                                          required = r,
                                          @default = r ? null : p.DefaultValue
                                      },
-                        example = Url + m.Attribute.Example
+                        example = b ? absUri.AbsoluteUri : string.Empty
                     }).ToArray();
         }
 
@@ -179,13 +192,27 @@ namespace TestProject.JsonService {
             };
         }
         /// <summary>
-        /// Returns the json for an error calling the requested method.
+        /// Returns the json for an error when a parameter value is invalid.
         /// </summary>
+        /// <param name="Message">Exception message</param>
+        /// <param name="ParameterName">Parameter name</param>
         /// <returns></returns>
-        protected virtual object CallFailure() {
+        protected virtual object ParameterFailure(string Message, string ParameterName) {
             return new {
                 status = "failed",
-                error = "There was an error with the parameters of your request."
+                error = Message,
+                parameter = ParameterName
+            };
+        }
+        /// <summary>
+        /// Returns the json for an error calling the requested method.
+        /// </summary>
+        /// <param name="Message">Exception message</param>
+        /// <returns></returns>        
+        protected virtual object CallFailure(string Message) {
+            return new {
+                status = "failed",
+                error = Message
             };
         }
         /// <summary>

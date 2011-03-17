@@ -31,8 +31,13 @@ namespace TestProject.JsonService {
 
                     if(val == null && pm.DefaultValue != System.DBNull.Value)
                         args.Add(pm.DefaultValue);
-                    else
-                        args.Add(Convert.ChangeType(val, pm.ParameterType));
+                    else {
+                        try {
+                            args.Add(Convert.ChangeType(val, pm.ParameterType));
+                        } catch(Exception e) {
+                            throw new ArgumentException("Failed to convert input to required type", key, e);
+                        }
+                    }
                 }
             }
 

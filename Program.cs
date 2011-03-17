@@ -14,10 +14,11 @@ using TestProject.JsonService;
 namespace TestProject {    
     class Program {        
         [STAThread]
-        static void Main(string[] args) {           
+        static void Main(string[] args) {
             TestService ts = new TestService();
             ts.Authorize = false;
-            ts.Start();
+            ts.Start(true);
+            System.Diagnostics.Process.Start(ts.Url);
             while(Console.ReadKey(true).Key != ConsoleKey.Escape)
                 ;
             ts.Stop();
@@ -35,11 +36,23 @@ namespace TestProject {
         
         }
     }
-    
+
     public class TestService : TestProject.JsonService.JsonService {
+        [Get("/",
+            Description = "your server is running!",
+            Example = "/")]
+        public object GetInfo() {
+            return new {
+                status = "ok",
+                message = "yet another crappy json web service!",
+                date = DateTime.Now.ToShortDateString(),
+                time = DateTime.Now.ToShortTimeString()
+            };
+        }
+
         [Get("add?value1={num1}&value2={num2}",
-             Description="returns the sum of 2 numbers.",
-             Example="add?value1=2&value2=2")]
+             Description = "returns the sum of 2 numbers.",
+             Example = "add?value1=2&value2=2")]
         public object Sum(int num1, int num2) {
             return new {
                 sum = num1 + num2
@@ -54,13 +67,7 @@ namespace TestProject {
                 message = "Hello, " + name
             };
         }
-        
-        public object CantBeCalled(string sup) {
-            return new {
-                UhOh = "This won't work."
-            };
-        }
-    }    
+    }
 
     class DynamicDictionary<TValue> : DynamicObject {
         private Dictionary<string, TValue> dict;

@@ -42,14 +42,14 @@ namespace TestProject.JsonService {
             private set;
         }
         /// <summary>
-        /// Gets and sets a brief description of what the method does.
+        /// Gets and sets a brief description of what the method does, to be shown on self-describe requests
         /// </summary>
         public string Description {
             get;
             set;
         }
         /// <summary>
-        /// Gets and sets an example url for the method.
+        /// Gets and sets an example url for the method, to be shown on self-describe requests
         /// </summary>
         public string Example {
             get;
