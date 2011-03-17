@@ -54,6 +54,9 @@
   <ItemGroup>
     <Compile Include="ID3v2.cs" />
     <Compile Include="JsonDocument.cs" />
+    <Compile Include="JsonService\Attributes.cs" />
+    <Compile Include="JsonService\JsonMethod.cs" />
+    <Compile Include="JsonService\JsonService.cs" />
     <Compile Include="LCD.cs" />
     <Compile Include="MP3.cs" />
     <Compile Include="Program.cs" />
@@ -63,7 +66,6 @@
     <Compile Include="Shoutcast.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="change_alert.htm" />
     <None Include="README" />
   </ItemGroup>
   <ItemGroup>

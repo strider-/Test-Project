@@ -8,11 +8,23 @@ using System.Text;
 using System.Collections.Generic;
 using System.IO.Ports;
 using System.Dynamic;
+using System.Net;
+using TestProject.JsonService;
 
 namespace TestProject {    
     class Program {        
         [STAThread]
         static void Main(string[] args) {
+
+            TestService ts = new TestService();
+            ts.Authorize = false;
+            ts.Start();
+            WebClient wc = new WebClient();
+            Console.WriteLine(wc.DownloadString("http://localhost:5678/add?value1=5&value2=15"));
+            while(true)
+                ;
+            ts.Stop();
+
             //RSACryptoServiceProvider p = new RSACryptoServiceProvider(2048);
             //string pem = RSAKeyReader.ToPEM(p.ExportParameters(false));
             //System.IO.File.WriteAllText(@"h:\downloads\rsa.pem", pem);
@@ -21,10 +33,33 @@ namespace TestProject {
             //byte[] signed = p.SignData(toSign, new SHA1CryptoServiceProvider());
 
             //System.IO.File.WriteAllBytes(@"h:\downloads\sig.bin", signed);
-
+            
             //bool verified = p.VerifyData(toSign, new SHA1CryptoServiceProvider(), signed);
+        
         }
     }
+    
+    public class TestService : TestProject.JsonService.JsonService {
+        [Get("add?value1={num1}&value2={num2}")]
+        public object Sum(int num1, int num2) {
+            return new {
+                sum = num1 + num2
+            };
+        }
+
+        [Get("greet?name={name}")]
+        public object ReportName(string name) {
+            return new {
+                message = "Hello, " + name
+            };
+        }
+        
+        public object CantBeCalled(string sup) {
+            return new {
+                UhOh = "This won't work."
+            };
+        }
+    }    
 
     class DynamicDictionary<TValue> : DynamicObject {
         private Dictionary<string, TValue> dict;
