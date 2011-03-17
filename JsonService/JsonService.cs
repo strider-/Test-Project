@@ -18,6 +18,7 @@ namespace TestProject.JsonService {
             this.Host = "+";
             this.Port = 5678;
             this.Authorize = false;
+            this.LogOutput = Console.Out;
             this.listener = new HttpListener();
         }
         
@@ -27,6 +28,7 @@ namespace TestProject.JsonService {
         public void Start() {
             if(!listener.IsListening) {
                 InitService();
+                Log("Server started");
                 listener.Start();
                 listener.BeginGetContext(NewRequest, null);
             }
@@ -37,6 +39,7 @@ namespace TestProject.JsonService {
         public void Stop() {
             if(listener.IsListening) {
                 listener.Stop();
+                Log("Server stopped");
             }
         }
 
@@ -48,11 +51,11 @@ namespace TestProject.JsonService {
             if(this.Port <= 0 || this.Port > 65535)
                 throw new ArgumentException("Port must be greater than 0 and less than 65535");
 
+            Log("Initializing server");
             listener.Prefixes.Clear();
             listener.Prefixes.Add(string.Format("http://{0}:{1}/", this.Host, this.Port));
-            InitMethods();
-        }
-        void InitMethods() {
+
+            Log("Obtaining method information");
             methods = from mi in GetType().GetMethods().OfType<MethodInfo>()
                       let attribs = mi.GetCustomAttributes(false).OfType<VerbAttribute>()
                       where attribs.Count() > 0
@@ -74,15 +77,18 @@ namespace TestProject.JsonService {
 
             if(Authorize) {
                 if(!AuthorizeRequest(Context.Request)) {
+                    Log("Unauthorized request");
                     Respond(Context.Response, Unauthorized());
                     return;
                 }
             }
 
             if(m == null) {
+                Log("No suitable method found");
                 Respond(Context.Response, NoMatchingMethod());
             } else {
                 if(!Context.Request.HttpMethod.Equals(m.Attribute.Verb, StringComparison.InvariantCultureIgnoreCase)) {
+                    Log("Invalid HTTP verb");
                     Respond(Context.Response, InvalidVerb());
                 } else {
                     try {
@@ -94,8 +100,10 @@ namespace TestProject.JsonService {
                             args: m.GetArgs(Context.Request.QueryString)
                         );
 
+                        Log("Valid request, response returned");
                         Respond(Context.Response, o);
                     } catch {
+                        Log("Failure to execute method");
                         Respond(Context.Response, CallFailure());
                     }
                 }
@@ -112,6 +120,12 @@ namespace TestProject.JsonService {
                 sw.Write(raw);
             }
             Response.Close();
+        }
+        void Log(string msg) {
+            if(LogOutput != null) {
+                LogOutput.WriteLine(string.Format("[{0:MM/dd/yyyy HH:mm:ss}] {1}", DateTime.Now, msg));
+                LogOutput.Flush();
+            }
         }
         /// <summary>
         /// Performs authorization &amp; returns a boolean representing the result.
@@ -161,6 +175,7 @@ namespace TestProject.JsonService {
                 error = "Missing or invalid authorization key."
             };
         }
+
         /// <summary>
         /// Gets and sets the host the service will run on.  Defaults to localhost.
         /// </summary>
@@ -180,6 +195,10 @@ namespace TestProject.JsonService {
         /// </summary>
         /// <remarks>Override the AuthorizeRequest method for custom authentication.</remarks>
         public bool Authorize {
+            get;
+            set;
+        }
+        public TextWriter LogOutput {
             get;
             set;
         }

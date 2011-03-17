@@ -20,7 +20,7 @@ namespace TestProject {
             ts.Authorize = false;
             ts.Start();
             WebClient wc = new WebClient();
-            Console.WriteLine(wc.DownloadString("http://localhost:5678/add?value1=5&value2=15"));
+            wc.DownloadString("http://localhost:5678/add?value1=5&value2=15");
             while(true)
                 ;
             ts.Stop();
