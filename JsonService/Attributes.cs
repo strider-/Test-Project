@@ -16,6 +16,7 @@ namespace TestProject.JsonService {
         /// </summary>
         /// <param name="UriTemplate">Sets the template for a service method call</param>
         public VerbAttribute(string UriTemplate) {
+            this.Description = string.Empty;
             this.UriTemplate = UriTemplate;
             MatchCollection mc = Regex.Matches(this.UriTemplate, REGEX, RegexOptions.Singleline);
 
@@ -39,6 +40,20 @@ namespace TestProject.JsonService {
         public string Path {
             get;
             private set;
+        }
+        /// <summary>
+        /// Gets and sets a brief description of what the method does.
+        /// </summary>
+        public string Description {
+            get;
+            set;
+        }
+        /// <summary>
+        /// Gets and sets an example url for the method.
+        /// </summary>
+        public string Example {
+            get;
+            set;
         }
         /// <summary>
         /// Gets the keys for the method call

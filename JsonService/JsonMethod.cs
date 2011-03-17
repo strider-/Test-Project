@@ -5,6 +5,9 @@ using System.Text;
 using System.Reflection;
 
 namespace TestProject.JsonService {
+    /// <summary>
+    /// Acts as a bridge between the query and the service method
+    /// </summary>
     class JsonMethod {
         public MethodInfo MethodInfo {
             get;
@@ -22,12 +25,15 @@ namespace TestProject.JsonService {
 
             foreach(var pm in MethodInfo.GetParameters()) {
                 string key = Attribute.GetKey(pm.Name);
-                string val = qs[key];
 
-                if(val == null && pm.DefaultValue != System.DBNull.Value)
-                    args.Add(pm.DefaultValue);
-                else
-                    args.Add(Convert.ChangeType(val, pm.ParameterType));
+                if(qs.AllKeys.Contains(key)) {
+                    string val = qs[key];
+
+                    if(val == null && pm.DefaultValue != System.DBNull.Value)
+                        args.Add(pm.DefaultValue);
+                    else
+                        args.Add(Convert.ChangeType(val, pm.ParameterType));
+                }
             }
 
             return args.ToArray();

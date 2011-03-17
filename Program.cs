@@ -14,14 +14,11 @@ using TestProject.JsonService;
 namespace TestProject {    
     class Program {        
         [STAThread]
-        static void Main(string[] args) {
-
+        static void Main(string[] args) {           
             TestService ts = new TestService();
             ts.Authorize = false;
             ts.Start();
-            WebClient wc = new WebClient();
-            wc.DownloadString("http://localhost:5678/add?value1=5&value2=15");
-            while(true)
+            while(Console.ReadKey(true).Key != ConsoleKey.Escape)
                 ;
             ts.Stop();
 
@@ -40,14 +37,18 @@ namespace TestProject {
     }
     
     public class TestService : TestProject.JsonService.JsonService {
-        [Get("add?value1={num1}&value2={num2}")]
+        [Get("add?value1={num1}&value2={num2}",
+             Description="returns the sum of 2 numbers.",
+             Example="add?value1=2&value2=2")]
         public object Sum(int num1, int num2) {
             return new {
                 sum = num1 + num2
             };
         }
 
-        [Get("greet?name={name}")]
+        [Get("greet?name={name}",
+             Description = "gives you a shout out.",
+             Example = "greet?name=you%20silly%20goose")]
         public object ReportName(string name) {
             return new {
                 message = "Hello, " + name

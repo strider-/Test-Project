@@ -18,6 +18,7 @@ namespace TestProject.JsonService {
             this.Host = "+";
             this.Port = 5678;
             this.Authorize = false;
+            this.AllowDescribe = true;
             this.LogOutput = Console.Out;
             this.listener = new HttpListener();
         }
@@ -28,7 +29,7 @@ namespace TestProject.JsonService {
         public void Start() {
             if(!listener.IsListening) {
                 InitService();
-                Log("Server started");
+                Log("Server started @ " + Url);
                 listener.Start();
                 listener.BeginGetContext(NewRequest, null);
             }
@@ -39,6 +40,7 @@ namespace TestProject.JsonService {
         public void Stop() {
             if(listener.IsListening) {
                 listener.Stop();
+                Url = null;
                 Log("Server stopped");
             }
         }
@@ -54,6 +56,7 @@ namespace TestProject.JsonService {
             Log("Initializing server");
             listener.Prefixes.Clear();
             listener.Prefixes.Add(string.Format("http://{0}:{1}/", this.Host, this.Port));
+            Url = listener.Prefixes.First().Replace("+", "localhost");
 
             Log("Obtaining method information");
             methods = from mi in GetType().GetMethods().OfType<MethodInfo>()
@@ -72,6 +75,12 @@ namespace TestProject.JsonService {
             }
         }
         void ProcessRequest(HttpListenerContext Context) {
+            if(AllowDescribe && Context.Request.Url.LocalPath.Equals("/help", StringComparison.InvariantCultureIgnoreCase)) {
+                Log("Describing service.");
+                Respond(Context.Response, Describe());
+                return;
+            }
+
             JsonMethod m = methods.Where(jm => jm.IsMatch(Context.Request.Url.LocalPath)).FirstOrDefault();
             BindingFlags flags = BindingFlags.InvokeMethod | BindingFlags.Public | BindingFlags.FlattenHierarchy | BindingFlags.Instance;
 
@@ -127,6 +136,30 @@ namespace TestProject.JsonService {
                 LogOutput.Flush();
             }
         }
+        /// <summary>
+        /// Returns all valid request urls for the service.
+        /// </summary>
+        /// <returns></returns>
+        object Describe() {
+            return (from m in methods
+                    let ps = m.MethodInfo.GetParameters()
+                    select new {
+                        path = m.Attribute.Path,
+                        desc = m.Attribute.Description,
+                        parameters = from ph in m.Attribute.Placeholders
+                                     let k = m.Attribute.GetKey(ph)
+                                     let p = ps.Single(pi => pi.Name == ph)
+                                     let r = p.DefaultValue == System.DBNull.Value
+                                     select new {
+                                         name = k,
+                                         type = p.ParameterType.Name.ToLower(),
+                                         required = r,
+                                         @default = r ? null : p.DefaultValue
+                                     },
+                        example = Url + m.Attribute.Example
+                    }).ToArray();
+        }
+
         /// <summary>
         /// Performs authorization &amp; returns a boolean representing the result.
         /// </summary>
@@ -189,7 +222,14 @@ namespace TestProject.JsonService {
         public int Port {
             get;
             set;
-        }        
+        }
+        /// <summary>
+        /// Gets the url the service is listening on
+        /// </summary>
+        public string Url {
+            get;
+            private set;
+        }
         /// <summary>
         /// Gets and sets whether or not to authorize requests.
         /// </summary>
@@ -198,6 +238,16 @@ namespace TestProject.JsonService {
             get;
             set;
         }
+        /// <summary>
+        /// Gets and sets whether or not to allow the service to describe its methods to a client by requesting '/help'
+        /// </summary>
+        public bool AllowDescribe {
+            get;
+            set;
+        }
+        /// <summary>
+        /// Gets and sets the output for logging
+        /// </summary>
         public TextWriter LogOutput {
             get;
             set;
