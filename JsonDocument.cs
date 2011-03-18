@@ -145,9 +145,11 @@ namespace TestProject {
             sb.AppendFormat("{{{0}", newLine);
 
             if(obj != null) {
-                PropertyInfo[] pi = obj.GetType().GetProperties();
+                PropertyInfo[] pi = obj.GetType().GetProperties(BindingFlags.Instance | BindingFlags.Public);
                 for(int i = 0; i < pi.Length; i++) {
                     var value = pi[i].GetValue(obj, null);
+                    if(obj.Equals(value))
+                        continue;
                     sb.AppendFormat("{0}\"{1}\": ", tab, pi[i].Name);
                     sb.Append(getJsonValue(value, tabCount));
                     sb.Append(i < pi.Length - 1 ? "," : "");

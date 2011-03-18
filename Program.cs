@@ -14,6 +14,11 @@ namespace TestProject {
     class Program {        
         [STAThread]
         static void Main(string[] args) {
+            JsonDocument doc = new JsonDocument(new {
+                date = DateTime.Now
+            });
+            Console.WriteLine(doc.ToString());
+            Console.ReadLine();
             //RSACryptoServiceProvider p = new RSACryptoServiceProvider(2048);
             //string pem = RSAKeyReader.ToPEM(p.ExportParameters(false));
             //System.IO.File.WriteAllText(@"h:\downloads\rsa.pem", pem);
