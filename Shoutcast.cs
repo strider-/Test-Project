@@ -204,7 +204,7 @@ namespace TestProject {
             private set;
         }
         /// <summary>
-        /// Gets and sets whether or not to store the stream to disc as it's running.
+        /// Gets and sets whether or not to store the stream to disk as it's running.
         /// </summary>
         public bool RipStream {
             get;

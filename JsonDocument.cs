@@ -157,7 +157,7 @@ namespace TestProject {
             }
 
             sb.Append(string.Join(string.Format(",{0}", newLine), entries));
-            sb.AppendFormat("{0}}}", tabString(tabCount - 1));
+            sb.AppendFormat("{0}{1}}}", newLine, tabString(tabCount - 1));
 
             return sb.ToString();
         }
