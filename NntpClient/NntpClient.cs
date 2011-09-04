@@ -5,6 +5,7 @@ using System.Text;
 using System.Net.Sockets;
 using System.IO;
 using System.Net.Security;
+using System.Text.RegularExpressions;
 
 namespace TestProject.NntpClient {
     public class NntpClient : IDisposable {
@@ -12,9 +13,11 @@ namespace TestProject.NntpClient {
         TcpClient client;
         StreamReader sr;
         StreamWriter sw;
+        Encoding enc;
 
         public NntpClient() {
             client = new TcpClient();
+            enc = Encoding.GetEncoding(1252);
         }
 
         public void Connect(string hostname, int port, bool ssl) {            
@@ -28,8 +31,8 @@ namespace TestProject.NntpClient {
                 stream = sslStream;
             }
 
-            sr = new StreamReader(stream, Encoding.ASCII);
-            sw = new StreamWriter(stream, Encoding.ASCII);
+            sr = new StreamReader(stream, enc);
+            sw = new StreamWriter(stream, enc);
             sw.AutoFlush = true;
 
             ReadLine();
@@ -124,12 +127,55 @@ namespace TestProject.NntpClient {
 
             var dict = ReadHeader();
 
-            StringBuilder body = new StringBuilder();
-            while((line = ReadLine()) != ".") {
-                body.Append(line);
+            string yEncHeader = ReadLine();
+            string file = null;
+            int part=0, exSize=0;
+
+            var mc = Regex.Matches(yEncHeader, @"(?<Key>[^\s=]+)=(?<Value>[^\s]*)", RegexOptions.Singleline);
+            foreach(Match m in mc) {
+                string val = m.Groups["Value"].Value;
+                switch(m.Groups["Key"].Value) {                    
+                    case "name":
+                        file = val;
+                        break;
+                    case "part":
+                        part = int.Parse(val);
+                        break;
+                    case "size":
+                        exSize = int.Parse(val);
+                        break;
+                }
             }
 
-            return new NntpArticle { Headers = dict, Body = body.ToString() };
+            string yEncBegin = ReadLine();
+            MemoryStream ms = new MemoryStream();
+            while((line = ReadLine()) != ".") {
+                YEncDecode(line, ms);
+            }
+            
+            ms.Position = 0;
+            return new NntpArticle { Headers = dict, Body = ms, Filename = file, Part = part, ExpectedSize = exSize };
+        }
+
+        private void YEncDecode(string line, Stream destination) {
+            if(line.StartsWith("=yend")) {
+                return;
+            }
+
+            byte[] raw = enc.GetBytes(line);
+            byte[] decoded = new byte[line.Length];
+            int length = 0;
+
+            for(int i = raw[0] == 0x2e && raw[1] == 0x2e ? 1 : 0; i < raw.Length; i++) {
+                if(raw[i] == '=') {
+                    i++;
+                    decoded[length++] = (byte)((raw[i] - 0x40) - 0x2a);
+                } else {
+                    decoded[length++] = (byte)(raw[i] - 0x2a);
+                }
+            }
+            
+            destination.Write(decoded, 0, length);
         }
 
         public string CurrentGroup { get; private set; }
