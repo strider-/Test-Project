@@ -9,6 +9,8 @@ using System.Text.RegularExpressions;
 
 namespace TestProject.NntpClient {
     public class NntpClient : IDisposable {
+        const string PATTERN_YENC_HEADER = @"(?<Key>[^\s=]+)=(?<Value>[^\s]*)";
+
         byte[] buffer;
         TcpClient client;
         StreamReader sr;
@@ -66,9 +68,6 @@ namespace TestProject.NntpClient {
                 dict[key] = value.Trim();
             }
 
-            if(header == string.Empty)
-                ReadLine();
-
             return dict;
         }
 
@@ -125,40 +124,34 @@ namespace TestProject.NntpClient {
             string result = WriteLine("ARTICLE <{0}>", articleId.Trim('<', '>')),
                    line = null;
 
+            if(result.StartsWith("4"))
+                return null;
+
             var dict = ReadHeader();
+            string yEncHeader = string.Empty;
+            while((yEncHeader = ReadLine()) == string.Empty)
+                ;
 
-            string yEncHeader = ReadLine();
-            string file = null;
-            int part=0, exSize=0;
-
-            var mc = Regex.Matches(yEncHeader, @"(?<Key>[^\s=]+)=(?<Value>[^\s]*)", RegexOptions.Singleline);
-            foreach(Match m in mc) {
-                string val = m.Groups["Value"].Value;
-                switch(m.Groups["Key"].Value) {                    
-                    case "name":
-                        file = val;
-                        break;
-                    case "part":
-                        part = int.Parse(val);
-                        break;
-                    case "size":
-                        exSize = int.Parse(val);
-                        break;
-                }
-            }
-
-            string yEncBegin = ReadLine();
+            var mc = Regex.Matches(yEncHeader, PATTERN_YENC_HEADER, RegexOptions.Singleline | RegexOptions.Compiled);
+            var yDict = mc.OfType<Match>().ToDictionary(k => k.Groups["Key"].Value, v => v.Groups["Value"].Value);
+            
             MemoryStream ms = new MemoryStream();
             while((line = ReadLine()) != ".") {
                 YEncDecode(line, ms);
-            }
-            
+            }            
             ms.Position = 0;
-            return new NntpArticle { Headers = dict, Body = ms, Filename = file, Part = part, ExpectedSize = exSize };
+
+            return new NntpArticle { 
+                Headers = dict, 
+                Body = ms,
+                Filename = yDict["name"], 
+                Part = int.Parse(yDict["part"]), 
+                ExpectedSize = int.Parse(yDict["size"]) 
+            };
         }
 
         private void YEncDecode(string line, Stream destination) {
-            if(line.StartsWith("=yend")) {
+            if(line.StartsWith("=yend") || line.StartsWith("=ypart")) {
                 return;
             }
 
@@ -166,7 +159,7 @@ namespace TestProject.NntpClient {
             byte[] decoded = new byte[line.Length];
             int length = 0;
 
-            for(int i = raw[0] == 0x2e && raw[1] == 0x2e ? 1 : 0; i < raw.Length; i++) {
+            for(int i = (raw[0] == 0x2e && raw[1] == 0x2e) ? 1 : 0; i < raw.Length; i++) {
                 if(raw[i] == '=') {
                     i++;
                     decoded[length++] = (byte)((raw[i] - 0x40) - 0x2a);

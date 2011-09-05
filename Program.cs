@@ -23,16 +23,53 @@ namespace TestProject {
             var settings = ConfigurationManager.AppSettings;
             string host = settings["NntpHost"];
             int port = int.Parse(settings["NntpPort"]);
+            string storePath = settings["NntpStorePath"];
+
+            XDocument doc = XDocument.Load(settings["NntpNzb"]);
+            XNamespace ns = doc.Root.GetDefaultNamespace();
+            var files = new Dictionary<string, Dictionary<int, string>>();
 
             using(var nntp = new NntpClient.NntpClient()) {
                 nntp.Connect(host, port, true);
                 nntp.Authenticate(settings["NntpUser"], settings["NntpPass"]);
-               
-                var groups = nntp.GetGroups();
 
-                Console.WriteLine("Press Enter to continue...");
-                Console.ReadLine();
-            }
+                foreach(var elm in doc.Root.Elements(ns + "file")) {
+                    Console.WriteLine(elm.Attribute("subject").Value);
+                    var parts = new Dictionary<int, string>();
+
+                    string group = elm.Element(ns + "groups").Elements(ns + "group").First().Value;
+                    nntp.SetGroup(group);
+
+                    int count = elm.Element(ns + "segments").Elements(ns + "segment").Count();
+                    foreach(var seg in elm.Element(ns + "segments").Elements(ns + "segment")) {
+                        Console.WriteLine("Downloading segment {0:000} / {1:000}", int.Parse(seg.Attribute("number").Value), count);
+                        var art = nntp.GetArticle(seg.Value);
+                        string loc = art.Store(storePath);
+                        parts[art.Part] = loc;
+                    }
+                    var fname = parts.GroupBy(p => p.Value.Substring(0, p.Value.LastIndexOf("."))).Select(p => p.Key).Single();
+                    files[fname] = parts;
+                }
+
+                Console.WriteLine("----------");
+
+                foreach(var file in files) {
+                    Console.WriteLine("Assembling file {0}...", file.Key);
+                    using(FileStream final = new FileStream(file.Key, FileMode.Append, FileAccess.Write, FileShare.None)) {
+                        foreach(var part in file.Value.OrderBy(p => p.Key)) {
+                            using(FileStream segment = new FileStream(part.Value, FileMode.Open, FileAccess.Read, FileShare.None)) {
+                                segment.CopyTo(final);
+                            }
+                            File.Delete(part.Value);
+                        }
+                    }
+                }
+
+                Console.WriteLine("Done");
+            }            
+
+            Console.WriteLine("Press Enter to continue...");
+            Console.ReadLine();
         }
     }
 
