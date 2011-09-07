@@ -20,74 +20,57 @@ namespace TestProject {
     class Program {
         [STAThread]
         static void Main(string[] args) {
-            var settings = ConfigurationManager.AppSettings;
-            string host = settings["NntpHost"];
-            int port = int.Parse(settings["NntpPort"]);
-            string storePath = settings["NntpStorePath"];
+            string UuencSource = "begin 644 cat.txt\r\n#0V%T\r\n`\r\nend\r\n";
+            var sr = new StringReader(UuencSource);
+            var dest = new MemoryStream();            
+            string line=null;
 
-            XDocument doc = XDocument.Load(settings["NntpNzb"]);
-            XNamespace ns = doc.Root.GetDefaultNamespace();
-            var files = new Dictionary<string, Dictionary<int, string>>();
+            var header = sr.ReadLine();
+            while((line = sr.ReadLine()) != null) {
+                if(line == "`" || line == "end" || string.IsNullOrWhiteSpace(line))
+                    continue;
+                byte[] raw = Encoding.Default.GetBytes(line);
+                int length = raw[0] - 32;
+                int pos = 1, written = 0;
 
-            using(var nntp = new NntpClient.NntpClient()) {
-                nntp.Connect(host, port, true);
-                nntp.Authenticate(settings["NntpUser"], settings["NntpPass"]);
+                while(written != length) {
+                    int toRead = Math.Min(length - written, 3) + 1;
 
-                foreach(var elm in doc.Root.Elements(ns + "file")) {
-                    Console.WriteLine(elm.Attribute("subject").Value);
-                    var parts = new Dictionary<int, string>();
+                    byte[] block = new byte[toRead];
+                    for(int i = 0; i < toRead; i++)
+                        block[i] = (byte)(raw[pos++] - 32);
 
-                    string group = elm.Element(ns + "groups").Elements(ns + "group").First().Value;
-                    nntp.SetGroup(group);
-
-                    int count = elm.Element(ns + "segments").Elements(ns + "segment").Count();
-                    foreach(var seg in elm.Element(ns + "segments").Elements(ns + "segment")) {
-                        Console.WriteLine("Downloading segment {0:000} / {1:000}", int.Parse(seg.Attribute("number").Value), count);
-                        var art = nntp.GetArticle(seg.Value);
-                        string loc = art.Store(storePath);
-                        parts[art.Part] = loc;
+                    byte[] decoded = new byte[toRead - 1];
+                    for(int i = 0, e = 2; i < decoded.Length; i++, e += 2) {
+                        decoded[i] = (byte)((block[i] << e) & 0xFF | (block[i + 1] >> (6 - e)) & (byte)(Math.Pow(2, e) - 1));
                     }
-                    var fname = parts.GroupBy(p => p.Value.Substring(0, p.Value.LastIndexOf("."))).Select(p => p.Key).Single();
-                    files[fname] = parts;
+                    written += decoded.Length;
+                    dest.Write(decoded, 0, decoded.Length);
                 }
+            }
 
-                Console.WriteLine("----------");
+            string dec = Encoding.Default.GetString(dest.ToArray());
+            /*
+            var line = "#0V%T";
+            byte[] raw = Encoding.Default.GetBytes(line);
+            int len = raw[0] - 32;
 
-                foreach(var file in files) {
-                    Console.WriteLine("Assembling file {0}...", file.Key);
-                    using(FileStream final = new FileStream(file.Key, FileMode.Append, FileAccess.Write, FileShare.None)) {
-                        foreach(var part in file.Value.OrderBy(p => p.Key)) {
-                            using(FileStream segment = new FileStream(part.Value, FileMode.Open, FileAccess.Read, FileShare.None)) {
-                                segment.CopyTo(final);
-                            }
-                            File.Delete(part.Value);
-                        }
-                    }
-                }
-
-                Console.WriteLine("Done");
-            }            
-
-            Console.WriteLine("Press Enter to continue...");
-            Console.ReadLine();
-        }
-    }
-
-    public class NZB {
-        XDocument nzb;
-        XNamespace ns;
-
-        public NZB(string raw) {
-            var settings = new XmlReaderSettings {
-                ValidationType = ValidationType.DTD,
-                DtdProcessing = DtdProcessing.Parse
+            byte[] block = new byte[] { 
+                (byte)(raw[1] - 32), 
+                (byte)(raw[2] - 32), 
+                (byte)(raw[3] - 32), 
+                (byte)(raw[4] - 32) 
             };
-
-            XmlReader r = XmlReader.Create(new StringReader(raw), settings);
-            nzb = XDocument.Load(r);
-            ns = nzb.Root.GetDefaultNamespace();
+             * 
+            byte[] decoded = new byte[] { 
+                (byte)((block[0] << 2) & 0xFF | (block[1] >> 4) & 3),
+                (byte)((block[1] << 4) & 0xFF | (block[2] >> 2) & 15),
+                (byte)((block[2] << 6) & 0xFF | (block[3] >> 0) & 63)
+            };
+            */
         }
     }
+
 
     public class RuleEvaluator<T> {
         public RuleEvaluator() {

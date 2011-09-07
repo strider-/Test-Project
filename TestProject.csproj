@@ -73,9 +73,6 @@
     <Compile Include="JsonDocument.cs" />
     <Compile Include="LCD.cs" />
     <Compile Include="MP3.cs" />
-    <Compile Include="NntpClient\NntpArticle.cs" />
-    <Compile Include="NntpClient\NntpClient.cs" />
-    <Compile Include="NntpClient\NntpGroup.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RSAKeyReader.cs" />
